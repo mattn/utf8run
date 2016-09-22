@@ -4,7 +4,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"runtime"
@@ -12,20 +11,7 @@ import (
 
 	"github.com/mattn/go-encoding"
 	"github.com/mattn/go-isatty"
-	"golang.org/x/text/transform"
 )
-
-type Writer struct {
-	w io.Writer
-	t transform.Transformer
-}
-
-func (w *Writer) Write(b []byte) (int, error) {
-	bb := make([]byte, len(b)*4/2)
-	n, _, _ := w.t.Transform(bb, b, false)
-	_, err := w.w.Write(bb[:n])
-	return len(b), err
-}
 
 var enc = flag.String("e", "cp932", "encoding")
 
@@ -48,8 +34,8 @@ func run() int {
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 	} else {
-		cmd.Stdout = &Writer{os.Stdout, ioenc.NewDecoder()}
-		cmd.Stderr = &Writer{os.Stderr, ioenc.NewDecoder()}
+		cmd.Stdout = ioenc.NewEncoder().Writer(os.Stdout)
+		cmd.Stderr = ioenc.NewEncoder().Writer(os.Stderr)
 		cmd.Stdin = os.Stdin
 	}
 	if err := cmd.Run(); err != nil {
